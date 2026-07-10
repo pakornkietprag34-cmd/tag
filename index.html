@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตัวคำนวณภาษีเงินได้บุคคลธรรมดา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===== Header ===== -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">฿</span>
+        <div class="brand-text">
+          <h1>ตัวคำนวณภาษี</h1>
+          <p>ประเมินภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได พร้อมจดจำข้อมูลของคุณ</p>
+        </div>
+      </div>
+      <div class="header-status" id="storageStatus">ยังไม่มีข้อมูลที่บันทึกไว้</div>
+    </header>
+
+    <main class="layout">
+
+      <!-- ===== Left: Form ===== -->
+      <section class="panel form-panel">
+        <h2 class="panel-title">01 · ข้อมูลของคุณ</h2>
+
+        <form id="taxForm" novalidate>
+
+          <div class="field">
+            <label for="name">ชื่อ (ไม่บังคับ)</label>
+            <input type="text" id="name" placeholder="เช่น น้องมิว">
+          </div>
+
+          <div class="field">
+            <label for="income">รายได้ต่อปี (บาท)</label>
+            <input type="number" id="income" min="0" step="1000" placeholder="เช่น 480000" required>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="maritalStatus">สถานภาพคู่สมรส</label>
+              <select id="maritalStatus">
+                <option value="single">โสด / คู่สมรสมีรายได้</option>
+                <option value="spouse">คู่สมรสไม่มีรายได้ (+60,000)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="children">จำนวนบุตร (คนละ 30,000)</label>
+              <input type="number" id="children" min="0" max="20" step="1" value="0">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="otherDeductions">ค่าลดหย่อนอื่นๆ (ประกัน, กองทุน, บริจาค ฯลฯ)</label>
+            <input type="number" id="otherDeductions" min="0" step="500" value="0">
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="btn btn-primary" id="calcBtn">คำนวณภาษี</button>
+            <button type="button" class="btn btn-ghost" id="saveBtn">บันทึกข้อมูลนี้</button>
+          </div>
+          <div class="link-row">
+            <button type="button" class="btn btn-text" id="loadBtn">เรียกข้อมูลที่บันทึกไว้</button>
+            <button type="button" class="btn btn-text" id="clearBtn">ล้างข้อมูลที่บันทึกไว้</button>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- ===== Right: Results ===== -->
+      <section class="panel result-panel">
+        <h2 class="panel-title">02 · ผลการประเมิน</h2>
+
+        <div id="emptyState" class="empty-state">
+          <p>กรอกข้อมูลด้านซ้าย แล้วกด "คำนวณภาษี" เพื่อดูผลลัพธ์ที่นี่</p>
+        </div>
+
+        <div id="resultState" class="result-state hidden">
+
+          <div class="summary-grid">
+            <div class="summary-card">
+              <span class="summary-label">เงินได้สุทธิ (ฐานภาษี)</span>
+              <span class="summary-value mono" id="netIncomeOut">0</span>
+            </div>
+            <div class="summary-card highlight">
+              <span class="summary-label">ภาษีที่ต้องชำระ</span>
+              <span class="summary-value mono" id="taxOut">0</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">อัตราภาษีเฉลี่ย</span>
+              <span class="summary-value mono" id="effectiveRateOut">0%</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">ขั้นภาษีสูงสุดที่แตะ</span>
+              <span class="summary-value mono" id="topBracketOut">-</span>
+            </div>
+          </div>
+
+          <h3 class="ladder-title">บันไดภาษีของคุณ</h3>
+          <div class="ladder" id="taxLadder"></div>
+
+          <div class="advice" id="adviceBox"></div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="app-footer">
+      <span>โครงสร้าง: index.html · style.css · app.js — ข้อมูลบันทึกไว้ในเบราว์เซอร์ของคุณเท่านั้น (localStorage)</span>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
