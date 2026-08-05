@@ -183,52 +183,88 @@ function runCalculation() {
 async function saveData() {
     const data = readForm();
 
-    const newRecord = {
-        name: data.name,
-        income: data.income,
-        marital_status: data.maritalStatus,
-        children: data.children,
-        other_deductions: data.otherDeductions
-    };
+    // ลบข้อมูลเก่า
+    await supabaseClient
+        .from("tax_data")
+        .delete()
+        .neq("id", 0);
 
     const { error } = await supabaseClient
         .from("tax_data")
-        .insert([newRecord]);
+        .insert([{
+            name: data.name,
+            income: data.income,
+            marital_status: data.maritalStatus,
+            children: data.children,
+            other_deductions: data.otherDeductions
+        }]);
 
     if (error) {
-        console.error(error.message);
+        console.error(error);
         alert("บันทึกไม่สำเร็จ");
         return;
     }
 
+    storageStatus.textContent = "บันทึกข้อมูลเรียบร้อย ✓";
+    storageStatus.classList.add("saved");
+
     alert("บันทึกข้อมูลสำเร็จ");
 }
 
-function loadFromStorage(isManual = false) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      storageStatus.textContent = "ยังไม่มีข้อมูลที่บันทึกไว้";
-      storageStatus.classList.remove("saved");
-      return false;
+async function loadFromStorage(isManual = false) {
+
+    const { data, error } = await supabaseClient
+        .from("tax_data")
+        .select("*")
+        .order("id", { ascending: false })
+        .limit(1)
+        .single();
+
+    if (error || !data) {
+        storageStatus.textContent = "ยังไม่มีข้อมูลที่บันทึกไว้";
+        storageStatus.classList.remove("saved");
+        return false;
     }
-    const data = JSON.parse(raw);
-    fillForm(data);
+
+    fillForm({
+        name: data.name,
+        income: data.income,
+        maritalStatus: data.marital_status,
+        children: data.children,
+        otherDeductions: data.other_deductions
+    });
+
     storageStatus.textContent = isManual
-      ? `เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" กลับมาแล้ว ✓`
-      : `โหลดข้อมูลเดิมของ "${data.name || "ผู้ใช้"}" อัตโนมัติ`;
+        ? `เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" แล้ว ✓`
+        : `โหลดข้อมูลล่าสุดของ "${data.name || "ผู้ใช้"}"`;
+
     storageStatus.classList.add("saved");
+
     return true;
-  } catch (err) {
-    storageStatus.textContent = "ไม่สามารถโหลดข้อมูลเดิมได้";
-    return false;
-  }
 }
 
-function clearStorage() {
-  localStorage.removeItem(STORAGE_KEY);
-  storageStatus.textContent = "ล้างข้อมูลที่บันทึกไว้แล้ว";
-  storageStatus.classList.remove("saved");
+async function clearStorage() {
+
+    const { error } = await supabaseClient
+        .from("tax_data")
+        .delete()
+        .neq("id", 0);
+
+    if (error) {
+        console.error(error);
+        alert("ลบข้อมูลไม่สำเร็จ");
+        return;
+    }
+
+    form.reset();
+
+    storageStatus.textContent = "ล้างข้อมูลแล้ว";
+    storageStatus.classList.remove("saved");
+
+    emptyState.classList.remove("hidden");
+    resultState.classList.add("hidden");
+
+    alert("ลบข้อมูลเรียบร้อย");
 }
 
 // ===== Events =====
@@ -247,4 +283,10 @@ loadBtn.addEventListener("click", () => {
 clearBtn.addEventListener("click", clearStorage);
 
 // เรียกคืนข้อมูลที่เคยกรอกไว้ทันทีที่เปิดหน้า
-window.addEventListener("DOMContentLoaded", loadFromStorage);
+window.addEventListener("DOMContentLoaded", async () => {
+    const loaded = await loadFromStorage();
+
+    if (loaded) {
+        runCalculation();
+    }
+});
