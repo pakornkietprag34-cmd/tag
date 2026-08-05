@@ -3,8 +3,7 @@
    - คำนวณภาษีจาก UI
    - บันทึก / เรียกคืนข้อมูลที่เคยกรอกด้วย localStorage
    ============================================================ */
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
+
 const STORAGE_KEY = "taxHelper:lastEntry";
 const SUPABASE_URL = "YOUR_SUPABASE_URL";
 const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY";
