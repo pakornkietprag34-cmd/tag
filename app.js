@@ -237,7 +237,7 @@ form.addEventListener("submit", (e) => {
   runCalculation();
 });
 
-saveBtn.addEventListener("click", saveToStorage);
+saveBtn.addEventListener("click", saveData);
 loadBtn.addEventListener("click", () => {
   const loaded = loadFromStorage(true);
   if (loaded) {
