@@ -192,7 +192,7 @@ async function saveData() {
     };
 
     const { error } = await supabaseClient
-        .from("tax_logs")
+        .from("tax_data")
         .insert([newRecord]);
 
     if (error) {
