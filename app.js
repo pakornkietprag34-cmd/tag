@@ -180,21 +180,28 @@ function runCalculation() {
 }
 
 // ===== localStorage: save / load / clear =====
-function saveToStorage() {
-  const data = readForm();
+async function saveData() {
+    const data = readForm();
 
-  if (data.income <= 0) {
-    storageStatus.textContent = "กรอกรายได้ก่อนบันทึกข้อมูล";
-    return;
-  }
+    const newRecord = {
+        name: data.name,
+        income: data.income,
+        marital_status: data.maritalStatus,
+        children: data.children,
+        other_deductions: data.otherDeductions
+    };
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    storageStatus.textContent = "บันทึกข้อมูลแล้ว ✓";
-    storageStatus.classList.add("saved");
-  } catch (err) {
-    storageStatus.textContent = "บันทึกไม่สำเร็จ";
-  }
+    const { error } = await supabaseClient
+        .from("tax_logs")
+        .insert([newRecord]);
+
+    if (error) {
+        console.error(error.message);
+        alert("บันทึกไม่สำเร็จ");
+        return;
+    }
+
+    alert("บันทึกข้อมูลสำเร็จ");
 }
 
 function loadFromStorage(isManual = false) {
