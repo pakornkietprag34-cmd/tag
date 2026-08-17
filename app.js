@@ -3,8 +3,8 @@
    - คำนวณภาษีจาก UI
    - บันทึก / เรียกคืนข้อมูลที่เคยกรอกด้วย localStorage
    ============================================================ */
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://avwxtyiwrcoowqqqvmti.supabase.co";
+const SUPABASE_KEY = "sb_publishable_RKVua-Fq9f6NZrX6XJlNag_Ym0UJA89";
 
 const supabaseClient = supabase.createClient(
   SUPABASE_URL,
