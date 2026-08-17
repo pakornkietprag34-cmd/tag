@@ -6,6 +6,13 @@
 
 // ===== localStorage =====
 const STORAGE_KEY = "taxHelper:lastEntry";
+const SUPABASE_URL = "https://avwxtyiwrcoowqqqvmti.supabase.co";
+const SUPABASE_KEY = "sb_publishable_RKVua-Fq9f6NZrX6XJlNag_Ym0UJA89";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 // ===== อัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (บาท) =====
 const TAX_BRACKETS = [
