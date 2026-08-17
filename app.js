@@ -4,10 +4,6 @@
    - บันทึก / เรียกคืนข้อมูลที่เคยกรอกด้วย localStorage
    ============================================================ */
 
-const STORAGE_KEY = "taxHelper:lastEntry";
-const SUPABASE_URL = "https://vpmfovqaqebtshjbvfkh.supabase.co";
-const SUPABASE_KEY = "sb_publishable_I7d5Ai99MDAt9lzRFbQu-w_iziVUnAi";
-
 const supabaseClient = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
