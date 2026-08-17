@@ -1,16 +1,13 @@
 /* ============================================================
    ตัวคำนวณภาษีเงินได้บุคคลธรรมดา (แบบขั้นบันได)
    - คำนวณภาษีจาก UI
-   - บันทึก / เรียกคืนข้อมูลที่เคยกรอกด้วย localStorage
+   - บันทึก / เรียกคืนข้อมูลด้วย localStorage
    ============================================================ */
-const SUPABASE_URL = "https://avwxtyiwrcoowqqqvmti.supabase.co";
-const SUPABASE_KEY = "sb_publishable_RKVua-Fq9f6NZrX6XJlNag_Ym0UJA89";
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-// อัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (บาท)
+// ===== localStorage =====
+const STORAGE_KEY = "taxHelper:lastEntry";
+
+// ===== อัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (บาท) =====
 const TAX_BRACKETS = [
   { min: 0,       max: 150000,   rate: 0.00 },
   { min: 150000,  max: 300000,   rate: 0.05 },
@@ -61,6 +58,7 @@ function readForm() {
 
 function fillForm(data) {
   if (!data) return;
+
   nameInput.value = data.name || "";
   incomeInput.value = data.income || "";
   maritalSelect.value = data.maritalStatus || "single";
@@ -70,8 +68,12 @@ function fillForm(data) {
 
 // ===== Core tax calculation =====
 function calculateDeductions(data) {
+
   // ค่าใช้จ่าย: 50% ของรายได้ สูงสุด 100,000
-  const expenseDeduction = Math.min(data.income * 0.5, 100000);
+  const expenseDeduction = Math.min(
+    data.income * 0.5,
+    100000
+  );
 
   // ค่าลดหย่อนส่วนตัว
   let personalAllowance = 60000;
@@ -84,207 +86,378 @@ function calculateDeductions(data) {
   }
 
   // บุตร คนละ 30,000
-  const childDeduction = data.children > 0 ? data.children * 30000 : 0;
+  const childDeduction =
+    data.children > 0
+      ? data.children * 30000
+      : 0;
 
-  const otherDeductions = data.otherDeductions > 0 ? data.otherDeductions : 0;
+  // ค่าลดหย่อนอื่น ๆ
+  const otherDeductions =
+    data.otherDeductions > 0
+      ? data.otherDeductions
+      : 0;
 
-  return expenseDeduction + personalAllowance + childDeduction + otherDeductions;
+  return (
+    expenseDeduction +
+    personalAllowance +
+    childDeduction +
+    otherDeductions
+  );
 }
 
 function calculateTax(netIncome) {
+
   let tax = 0;
   let topBracketLabel = "ไม่ต้องเสียภาษี";
   const breakdown = [];
 
   for (let i = 0; i < TAX_BRACKETS.length; i++) {
+
     const bracket = TAX_BRACKETS[i];
 
     if (netIncome > bracket.min) {
-      const taxableInThisBracket = Math.min(netIncome, bracket.max) - bracket.min;
-      const taxForBracket = taxableInThisBracket * bracket.rate;
+
+      const taxableInThisBracket =
+        Math.min(netIncome, bracket.max) -
+        bracket.min;
+
+      const taxForBracket =
+        taxableInThisBracket * bracket.rate;
 
       tax += taxForBracket;
-      breakdown.push({ ...bracket, taxableInThisBracket, taxForBracket });
+
+      breakdown.push({
+        ...bracket,
+        taxableInThisBracket,
+        taxForBracket
+      });
 
       if (bracket.rate > 0) {
-        topBracketLabel = `${Math.round(bracket.rate * 100)}%`;
+        topBracketLabel =
+          `${Math.round(bracket.rate * 100)}%`;
       }
+
     } else {
-      breakdown.push({ ...bracket, taxableInThisBracket: 0, taxForBracket: 0 });
+
+      breakdown.push({
+        ...bracket,
+        taxableInThisBracket: 0,
+        taxForBracket: 0
+      });
+
     }
   }
 
-  return { tax, topBracketLabel, breakdown };
+  return {
+    tax,
+    topBracketLabel,
+    breakdown
+  };
 }
 
-function buildAdvice(data, netIncome, tax, effectiveRate) {
-  // ใช้ if/else จำแนกประเภทคำแนะนำ
+function buildAdvice(
+  data,
+  netIncome,
+  tax,
+  effectiveRate
+) {
+
   if (data.income <= 0) {
+
     return "กรอกรายได้ต่อปีของคุณเพื่อเริ่มคำนวณ";
+
   } else if (netIncome <= 0) {
+
     return "เงินได้สุทธิของคุณต่ำกว่าเกณฑ์ที่ต้องเสียภาษี ยินดีด้วย! ไม่ต้องจ่ายภาษีในปีนี้";
+
   } else if (tax === 0) {
+
     return "เงินได้สุทธิของคุณอยู่ในช่วงยกเว้นภาษี (ไม่เกิน 150,000 บาท) ไม่ต้องชำระภาษี";
+
   } else if (effectiveRate < 10) {
+
     return "ภาระภาษีของคุณยังอยู่ในระดับต่ำ ลองพิจารณาซื้อกองทุน SSF/RMF หรือประกันชีวิตเพิ่มเติม เพื่อใช้สิทธิลดหย่อนในปีถัดไป";
+
   } else if (effectiveRate < 20) {
+
     return "ภาระภาษีอยู่ในระดับปานกลาง การเพิ่มค่าลดหย่อน เช่น กองทุนสำรองเลี้ยงชีพหรือประกันสุขภาพ จะช่วยลดฐานภาษีได้อย่างมีนัยสำคัญ";
+
   } else {
+
     return "คุณอยู่ในขั้นภาษีสูง ควรวางแผนภาษีล่วงหน้า เช่น กระจายรายได้ ใช้สิทธิลดหย่อนเต็มวงเงิน หรือปรึกษาผู้เชี่ยวชาญด้านภาษี";
+
   }
 }
 
 function renderLadder(breakdown) {
+
   taxLadder.innerHTML = "";
-  const maxTaxable = Math.max(...breakdown.map(b => b.max === Infinity ? b.min * 1.3 : b.max - b.min), 1);
+
+  const maxTaxable = Math.max(
+    ...breakdown.map(
+      b =>
+        b.max === Infinity
+          ? b.min * 1.3
+          : b.max - b.min
+    ),
+    1
+  );
 
   breakdown.forEach((b) => {
-    const isActive = b.taxableInThisBracket > 0;
-    const rangeLabel = b.max === Infinity
-      ? `${(b.min / 1000000).toFixed(1)}ล้าน+`
-      : `${(b.min / 1000).toFixed(0)}k-${(b.max / 1000).toFixed(0)}k`;
 
-    const rung = document.createElement("div");
-    rung.className = "rung" + (isActive ? " active" : "");
+    const isActive =
+      b.taxableInThisBracket > 0;
 
-    const widthPercent = Math.min((b.taxableInThisBracket / maxTaxable) * 100, 100);
+    const rangeLabel =
+      b.max === Infinity
+        ? `${(b.min / 1000000).toFixed(1)}ล้าน+`
+        : `${(b.min / 1000).toFixed(0)}k-${(b.max / 1000).toFixed(0)}k`;
+
+    const rung =
+      document.createElement("div");
+
+    rung.className =
+      "rung" +
+      (isActive ? " active" : "");
+
+    const widthPercent =
+      Math.min(
+        (b.taxableInThisBracket /
+          maxTaxable) *
+          100,
+        100
+      );
 
     rung.innerHTML = `
-      <span>${rangeLabel} · ${Math.round(b.rate * 100)}%</span>
-      <span class="rung-bar-track"><span class="rung-bar-fill" style="width:${widthPercent}%"></span></span>
-      <span class="rung-amount">${b.taxForBracket > 0 ? formatBaht(b.taxForBracket) : "-"}</span>
+      <span>
+        ${rangeLabel} ·
+        ${Math.round(b.rate * 100)}%
+      </span>
+
+      <span class="rung-bar-track">
+        <span
+          class="rung-bar-fill"
+          style="width:${widthPercent}%">
+        </span>
+      </span>
+
+      <span class="rung-amount">
+        ${
+          b.taxForBracket > 0
+            ? formatBaht(b.taxForBracket)
+            : "-"
+        }
+      </span>
     `;
+
     taxLadder.appendChild(rung);
   });
 }
 
+// ===== Main calculation =====
 function runCalculation() {
-  const data = readForm();
-  const totalDeductions = calculateDeductions(data);
-  const netIncome = Math.max(data.income - totalDeductions, 0);
-  const { tax, topBracketLabel, breakdown } = calculateTax(netIncome);
-  const effectiveRate = data.income > 0 ? (tax / data.income) * 100 : 0;
 
-  netIncomeOut.textContent = formatBaht(netIncome);
-  taxOut.textContent = formatBaht(tax);
-  effectiveRateOut.textContent = `${effectiveRate.toFixed(1)}%`;
-  topBracketOut.textContent = topBracketLabel;
+  const data = readForm();
+
+  const totalDeductions =
+    calculateDeductions(data);
+
+  const netIncome =
+    Math.max(
+      data.income - totalDeductions,
+      0
+    );
+
+  const {
+    tax,
+    topBracketLabel,
+    breakdown
+  } = calculateTax(netIncome);
+
+  const effectiveRate =
+    data.income > 0
+      ? (tax / data.income) * 100
+      : 0;
+
+  netIncomeOut.textContent =
+    formatBaht(netIncome);
+
+  taxOut.textContent =
+    formatBaht(tax);
+
+  effectiveRateOut.textContent =
+    `${effectiveRate.toFixed(1)}%`;
+
+  topBracketOut.textContent =
+    topBracketLabel;
 
   renderLadder(breakdown);
-  adviceBox.textContent = buildAdvice(data, netIncome, tax, effectiveRate);
+
+  adviceBox.textContent =
+    buildAdvice(
+      data,
+      netIncome,
+      tax,
+      effectiveRate
+    );
 
   emptyState.classList.add("hidden");
   resultState.classList.remove("hidden");
 }
 
-// ===== localStorage: save / load / clear =====
-async function saveData() {
-    const data = readForm();
+// ============================================================
+// localStorage: SAVE
+// ============================================================
+function saveData() {
 
-    // ลบข้อมูลเก่า
-    await supabaseClient
-        .from("tax_data")
-        .delete()
-        .neq("id", 0);
+  const data = readForm();
 
-    const { error } = await supabaseClient
-        .from("tax_data")
-        .insert([{
-            name: data.name,
-            income: data.income,
-            marital_status: data.maritalStatus,
-            children: data.children,
-            other_deductions: data.otherDeductions
-        }]);
+  try {
 
-    if (error) {
-        console.error(error);
-        alert("บันทึกไม่สำเร็จ");
-        return;
-    }
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(data)
+    );
 
-    storageStatus.textContent = "บันทึกข้อมูลเรียบร้อย ✓";
+    storageStatus.textContent =
+      "บันทึกข้อมูลเรียบร้อย ✓";
+
     storageStatus.classList.add("saved");
 
     alert("บันทึกข้อมูลสำเร็จ");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("บันทึกข้อมูลไม่สำเร็จ");
+
+  }
 }
 
-async function loadFromStorage(isManual = false) {
+// ============================================================
+// localStorage: LOAD
+// ============================================================
+function loadFromStorage(isManual = false) {
 
-    const { data, error } = await supabaseClient
-        .from("tax_data")
-        .select("*")
-        .order("id", { ascending: false })
-        .limit(1)
-        .single();
+  try {
 
-    if (error || !data) {
-        storageStatus.textContent = "ยังไม่มีข้อมูลที่บันทึกไว้";
-        storageStatus.classList.remove("saved");
-        return false;
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+
+      storageStatus.textContent =
+        "ยังไม่มีข้อมูลที่บันทึกไว้";
+
+      storageStatus.classList.remove("saved");
+
+      return false;
     }
 
-    fillForm({
-        name: data.name,
-        income: data.income,
-        maritalStatus: data.marital_status,
-        children: data.children,
-        otherDeductions: data.other_deductions
-    });
+    const data =
+      JSON.parse(saved);
 
-    storageStatus.textContent = isManual
+    fillForm(data);
+
+    storageStatus.textContent =
+      isManual
         ? `เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" แล้ว ✓`
         : `โหลดข้อมูลล่าสุดของ "${data.name || "ผู้ใช้"}"`;
 
     storageStatus.classList.add("saved");
 
     return true;
+
+  } catch (error) {
+
+    console.error(error);
+
+    storageStatus.textContent =
+      "ไม่สามารถโหลดข้อมูลได้";
+
+    storageStatus.classList.remove("saved");
+
+    return false;
+  }
 }
 
-async function clearStorage() {
+// ============================================================
+// localStorage: CLEAR
+// ============================================================
+function clearStorage() {
 
-    const { error } = await supabaseClient
-        .from("tax_data")
-        .delete()
-        .neq("id", 0);
+  try {
 
-    if (error) {
-        console.error(error);
-        alert("ลบข้อมูลไม่สำเร็จ");
-        return;
-    }
+    localStorage.removeItem(STORAGE_KEY);
 
     form.reset();
 
-    storageStatus.textContent = "ล้างข้อมูลแล้ว";
+    storageStatus.textContent =
+      "ล้างข้อมูลแล้ว";
+
     storageStatus.classList.remove("saved");
 
     emptyState.classList.remove("hidden");
     resultState.classList.add("hidden");
 
     alert("ลบข้อมูลเรียบร้อย");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("ลบข้อมูลไม่สำเร็จ");
+
+  }
 }
 
 // ===== Events =====
 form.addEventListener("submit", (e) => {
+
   e.preventDefault();
+
   runCalculation();
+
 });
 
-saveBtn.addEventListener("click", saveData);
-loadBtn.addEventListener("click", () => {
-  const loaded = loadFromStorage(true);
-  if (loaded) {
-    runCalculation();
-  }
-});
-clearBtn.addEventListener("click", clearStorage);
+saveBtn.addEventListener(
+  "click",
+  saveData
+);
 
-// เรียกคืนข้อมูลที่เคยกรอกไว้ทันทีที่เปิดหน้า
-window.addEventListener("DOMContentLoaded", async () => {
-    const loaded = await loadFromStorage();
+loadBtn.addEventListener(
+  "click",
+  () => {
+
+    const loaded =
+      loadFromStorage(true);
 
     if (loaded) {
-        runCalculation();
+      runCalculation();
     }
-});
+
+  }
+);
+
+clearBtn.addEventListener(
+  "click",
+  clearStorage
+);
+
+// ============================================================
+// โหลดข้อมูลอัตโนมัติเมื่อเปิดหน้า
+// ============================================================
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    const loaded =
+      loadFromStorage();
+
+    if (loaded) {
+      runCalculation();
+    }
+
+  }
+);
