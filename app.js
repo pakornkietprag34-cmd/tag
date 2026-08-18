@@ -318,28 +318,16 @@ function runCalculation() {
 function saveData() {
 
   const data = readForm();
+   const { error } = await supabaseClient
+    .from("tag")
+    .insert([data]);
 
-  try {
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(data)
-    );
-
-    storageStatus.textContent =
-      "บันทึกข้อมูลเรียบร้อย ✓";
-
-    storageStatus.classList.add("saved");
-
-    alert("บันทึกข้อมูลสำเร็จ");
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert("บันทึกข้อมูลไม่สำเร็จ");
-
+  if (error) {
+    console.error(error.message);
+    return;
   }
+
+  alert("บันทึกข้อมูลสำเร็จ");
 }
 
 // ============================================================
