@@ -346,9 +346,10 @@ async function loadFromStorage(isManual = false) {
    fillForm(jsonData);
    storageStatus.textContent =
       isManual
-        ? เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" แล้ว ✓
-        : โหลดข้อมูลล่าสุดของ "${data.name || "ผู้ใช้"}";
-   storageStatus.classList.add("saved");
+        ? `เรียกข้อมูลของ "${jsonData.name || "ผู้ใช้"}"`
+        : `โหลดข้อมูลล่าสุดของ "${jsonData.name || "ผู้ใช้"}"`;
+
+    storageStatus.classList.add("saved");
    return true;
 
 }
