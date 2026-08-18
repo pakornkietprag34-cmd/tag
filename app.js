@@ -327,56 +327,31 @@ function saveData() {
     return;
   }
 
-  alert("บันทึกข้อมูลสำเร็จ2");
+  alert("บันทึกข้อมูลสำเร็จแล้ว");
 }
 
 // ============================================================
 // localStorage: LOAD
 // ============================================================
 function loadFromStorage(isManual = false) {
+   const { data, error } = await supabaseClient
+    .from("tag")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  try {
+   if (error) { console.error(error.message); return false; }
 
-    const saved =
-      localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) {
-
-      storageStatus.textContent =
-        "ยังไม่มีข้อมูลที่บันทึกไว้";
-
-      storageStatus.classList.remove("saved");
-
-      return false;
-    }
-
-    const data =
-      JSON.parse(saved);
-
-    fillForm(data);
-
-    storageStatus.textContent =
+   const jsonData = JSON.stringify(data, null, 2);
+   
+   fillForm(jsonData);
+   storageStatus.textContent =
       isManual
-        ? `เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" แล้ว ✓`
-        : `โหลดข้อมูลล่าสุดของ "${data.name || "ผู้ใช้"}"`;
+        ? เรียกข้อมูลของ "${data.name || "ผู้ใช้"}" แล้ว ✓
+        : โหลดข้อมูลล่าสุดของ "${data.name || "ผู้ใช้"}";
+   storageStatus.classList.add("saved");
+   return true;
 
-    storageStatus.classList.add("saved");
-
-    return true;
-
-  } catch (error) {
-
-    console.error(error);
-
-    storageStatus.textContent =
-      "ไม่สามารถโหลดข้อมูลได้";
-
-    storageStatus.classList.remove("saved");
-
-    return false;
-  }
 }
-
 // ============================================================
 // localStorage: CLEAR
 // ============================================================
