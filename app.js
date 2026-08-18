@@ -315,7 +315,7 @@ function runCalculation() {
 // ============================================================
 // localStorage: SAVE
 // ============================================================
-function saveData() {
+async function saveData() {
 
   const data = readForm();
    const { error } = await supabaseClient
@@ -333,7 +333,7 @@ function saveData() {
 // ============================================================
 // localStorage: LOAD
 // ============================================================
-function loadFromStorage(isManual = false) {
+async function loadFromStorage(isManual = false) {
    const { data, error } = await supabaseClient
     .from("tag")
     .select("*")
