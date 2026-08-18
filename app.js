@@ -341,14 +341,12 @@ async function loadFromStorage(isManual = false) {
       .limit(1);
 
    if (error) { console.error(error.message); return false; }
-
-   const jsonData = JSON.stringify(data, null, 2);
    
-   fillForm(jsonData);
+   fillForm(data[0]);
    storageStatus.textContent =
       isManual
-        ? `เรียกข้อมูลของ "${jsonData.name || "ผู้ใช้"}"`
-        : `โหลดข้อมูลล่าสุดของ "${jsonData.name || "ผู้ใช้"}"`;
+        ? `เรียกข้อมูลของ "${data[0].name || "ผู้ใช้"}"`
+        : `โหลดข้อมูลล่าสุดของ "${data[0].name || "ผู้ใช้"}"`;
 
     storageStatus.classList.add("saved");
    return true;
