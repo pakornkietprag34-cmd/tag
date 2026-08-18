@@ -337,7 +337,8 @@ async function loadFromStorage(isManual = false) {
    const { data, error } = await supabaseClient
     .from("tag")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+      .limit(1);
 
    if (error) { console.error(error.message); return false; }
 
